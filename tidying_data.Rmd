@@ -112,4 +112,52 @@ tail(catch_df)
 ```
 
 
+# split-apply-combine
+```{r}
+catch_summarized <- catch_df %>% 
+  group_by(Region) %>% 
+  summarize(mean_catch = mean(catch))
+head(catch_summarized)
+```
+```{r}
+catch_range<- catch_df %>% 
+  group_by(Region) %>% 
+  summarise(catch_low = range(catch)[1],
+           catch_high = range(catch)[2])
+print(catch_range)
+```
+```{r}
+catch_mean_sd<- catch_df %>% 
+  group_by(Region) %>% 
+  summarize(catch_mean = mean(catch, na.rm=T),
+            catch_sd = sd(catch, na.rm=T),
+            num_obs =n())
+print(catch_mean_sd)
+```
+
+```{r}
+catch_year <- catch_df %>% 
+  filter(Year > 1990) %>% 
+  group_by(Year) %>% 
+  summarise(catch_sum=sum(catch))
+print(catch_year)
+```
+```{r}
+region_defs <- read.csv(url("https://knb.ecoinformatics.org/knb/d1/mn/v2/object/df35b.303.1", method = "libcurl"),
+                        stringsAsFactors = FALSE)
+```
+
+straight into left join
+```{r}
+catch_joined <-left_join(catch_df, region_defs, by=c("Region"="code"))# left hand = right hand
+head(catch_joined)
+```
+
+
+```{r}
+catch_df %>% 
+  group_by(Region) %>% 
+  summarise(total_catch = sum(catch)) %>% 
+  left_join(region_defs, by = c("Region" = "code"))
+```
 
