@@ -110,6 +110,17 @@ catch_df <- catch_df %>%
 
 tail(catch_df)
 ```
+Anova
+do allows you to use other functions in pipes
+data = . grabs data in the pipe
+```{r}
+library(broom)
+catch_anova<-catch_df %>% 
+  group_by(Year) %>% 
+  do(tidy(TukeyHSD(aov(data=., catch~species)))) %>% 
+  filter(Year<="1997" & Year>="1990")
+catch_anova
+```
 
 
 # split-apply-combine
@@ -140,7 +151,8 @@ catch_year <- catch_df %>%
   filter(Year > 1990) %>% 
   group_by(Year) %>% 
   summarise(catch_sum=sum(catch))
-print(catch_year)
+print(arrange(catch_year, Year))
+#print(catch_year)
 ```
 ```{r}
 region_defs <- read.csv(url("https://knb.ecoinformatics.org/knb/d1/mn/v2/object/df35b.303.1", method = "libcurl"),
