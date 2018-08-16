@@ -35,4 +35,8 @@ Note that the `echo = FALSE` parameter was added to the code chunk to prevent pr
 ```{r, warning=FALSE, message=FALSE, echo=FALSE}
 summary(cars)
 ```
+#This stuff stinks
+```{r}
+test<-"This stuff stinks"
+```
 
