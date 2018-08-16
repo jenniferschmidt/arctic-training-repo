@@ -145,6 +145,103 @@ head(catch_df)</code></pre>
 ## 4    SSE 1889       0     182   11   92    0 285             
 ## 5    SSE 1890       0     251   42    0    0 292             
 ## 6    SSE 1891       0     274   24    0    0 298</code></pre>
+<p>Control shift M is the pipe operator</p>
+<p>Chains operations or functions together.</p>
+<p>If you think of the assignment operator (&lt;-) as reading like “gets”, then the pipe operator would read like “then.” Pull up the help for select ?select</p>
+<p>The minus sign indicates do not include.</p>
+<pre class="r"><code>library(tidyr)
+library(dplyr)
+#catch_df &lt;- catch_df %&gt;% 
+#  select(-All, -notesRegCode)</code></pre>
+<pre class="r"><code>#list the columns in the database
+nam&lt;-names(catch_df)
+namelist &lt;- data.frame(matrix(t(nam)));namelist</code></pre>
+<pre><code>##   matrix.t.nam..
+## 1         Region
+## 2           Year
+## 3        Chinook
+## 4        Sockeye
+## 5           Coho
+## 6           Pink
+## 7           Chum
+## 8            All
+## 9   notesRegCode</code></pre>
+<pre class="r"><code>catch_df&lt;-catch_df %&gt;% 
+  select(Region, Year, Chinook, Sockeye, Coho, Pink, Chum)
+head(catch_df)</code></pre>
+<pre><code>##   Region Year Chinook Sockeye Coho Pink Chum
+## 1    SSE 1886       0       5    0    0    0
+## 2    SSE 1887       0     155    0    0    0
+## 3    SSE 1888       0     224   16    0    0
+## 4    SSE 1889       0     182   11   92    0
+## 5    SSE 1890       0     251   42    0    0
+## 6    SSE 1891       0     274   24    0    0</code></pre>
+<p>key is the column names what am I turning the column speces is key and catch is value moved from wide to long using gather and renamed using the catch column to reflect uits</p>
+<pre class="r"><code>catch_df &lt;- catch_df %&gt;% 
+  gather(species, catch, -Region, -Year) %&gt;% 
+  rename(catch_thousands = catch)
+head(catch_df)</code></pre>
+<pre><code>##   Region Year species catch_thousands
+## 1    SSE 1886 Chinook               0
+## 2    SSE 1887 Chinook               0
+## 3    SSE 1888 Chinook               0
+## 4    SSE 1889 Chinook               0
+## 5    SSE 1890 Chinook               0
+## 6    SSE 1891 Chinook               0</code></pre>
+<pre class="r"><code>unique(catch_df$species)</code></pre>
+<pre><code>## [1] &quot;Chinook&quot; &quot;Sockeye&quot; &quot;Coho&quot;    &quot;Pink&quot;    &quot;Chum&quot;</code></pre>
+<pre class="r"><code>str(catch_df)</code></pre>
+<pre><code>## 'data.frame':    8540 obs. of  4 variables:
+##  $ Region         : chr  &quot;SSE&quot; &quot;SSE&quot; &quot;SSE&quot; &quot;SSE&quot; ...
+##  $ Year           : int  1886 1887 1888 1889 1890 1891 1892 1893 1894 1895 ...
+##  $ species        : chr  &quot;Chinook&quot; &quot;Chinook&quot; &quot;Chinook&quot; &quot;Chinook&quot; ...
+##  $ catch_thousands: chr  &quot;0&quot; &quot;0&quot; &quot;0&quot; &quot;0&quot; ...</code></pre>
+<pre class="r"><code>catch_integers &lt;- as.integer(catch_df$catch_thousands)</code></pre>
+<pre><code>## Warning: NAs introduced by coercion</code></pre>
+<p>We get an error “NAs introduced by coercion” which is R telling us that it couldn’t convert every value to an integer and, for those values it couldn’t convert, it put an NA in its place. This is behavior we commonly experience when cleaning datasets and it’s important to have the skills to deal with it when it crops up. We can find out which values are NAs with a combination of is.na() and which():</p>
+<pre class="r"><code>i &lt;- which(is.na(catch_integers)==T)# gives the row number that is problematic
+catch_df$catch_thousands[i]</code></pre>
+<pre><code>## [1] &quot;I&quot;</code></pre>
+<p>It looks like the 401st value is the problem. Let’s look at the 401s row of the catch data.frame:</p>
+<pre class="r"><code>catch_df[401,]</code></pre>
+<pre><code>##     Region Year species catch_thousands
+## 401    GSE 1955 Chinook               I</code></pre>
+<p>Well that’s odd: The value in catch_thousands is I which is isn’t even a number. It turns out that this dataset is from a PDF which was automatically converted into a CSV and this value of I is actually a 1. Let’s fix it:</p>
+<pre class="r"><code>catch_df &lt;- catch_df %&gt;%
+  mutate(catch_thousands = ifelse(catch_thousands == &quot;I&quot;, 1, catch_thousands),
+         catch_thousands = as.integer(catch_thousands))</code></pre>
+<p>Note that, in the above pipeline call to mutate(), we mutate catch_thousands twice. This works because mutate() processes each of the mutations in a step-wise fashion so the results of one mutation are available for the next.</p>
+<p>Now let’s try our conversion again:</p>
+<pre class="r"><code>catch_df &lt;- catch_df %&gt;%
+  mutate(catch = catch_thousands * 1000)
+
+summary(catch_df)</code></pre>
+<pre><code>##     Region               Year        species          catch_thousands  
+##  Length:8540        Min.   :1878   Length:8540        Min.   :    0.0  
+##  Class :character   1st Qu.:1922   Class :character   1st Qu.:    0.0  
+##  Mode  :character   Median :1947   Mode  :character   Median :   36.0  
+##                     Mean   :1946                      Mean   :  873.2  
+##                     3rd Qu.:1972                      3rd Qu.:  377.2  
+##                     Max.   :1997                      Max.   :53676.0  
+##      catch         
+##  Min.   :       0  
+##  1st Qu.:       0  
+##  Median :   36000  
+##  Mean   :  873249  
+##  3rd Qu.:  377250  
+##  Max.   :53676000</code></pre>
+<p>Looks good, no warnings! Now let’s remove the catch_thousands column for now since we don’t need it:</p>
+<pre class="r"><code>catch_df &lt;- catch_df %&gt;% 
+  select(-catch_thousands)
+
+tail(catch_df)</code></pre>
+<pre><code>##      Region Year species  catch
+## 8535    NOP 1992    Chum 342000
+## 8536    NOP 1993    Chum 135000
+## 8537    NOP 1994    Chum  84000
+## 8538    NOP 1995    Chum  99000
+## 8539    NOP 1996    Chum  68000
+## 8540    NOP 1997    Chum  97000</code></pre>
 
 
 

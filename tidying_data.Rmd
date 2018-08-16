@@ -30,3 +30,86 @@ catch_df <- read.csv(url("https://knb.ecoinformatics.org/knb/d1/mn/v2/object/df3
 head(catch_df)
 ```
 
+Control shift M is the pipe operator 
+
+Chains operations or functions together. 
+
+If you think of the assignment operator (<-) as reading like “gets”, then the pipe operator would read like “then.”
+Pull up the help for select
+?select
+
+The minus sign indicates do not include.
+```{r}
+library(tidyr)
+library(dplyr)
+#catch_df <- catch_df %>% 
+#  select(-All, -notesRegCode)
+```
+
+```{r}
+#list the columns in the database
+nam<-names(catch_df)
+namelist <- data.frame(matrix(t(nam)));namelist
+```
+
+```{r}
+catch_df<-catch_df %>% 
+  select(Region, Year, Chinook, Sockeye, Coho, Pink, Chum)
+head(catch_df)
+```
+key is the column names what am I turning the column speces is key and catch is value
+moved from wide to long using gather and renamed using the catch column to reflect uits
+```{r}
+catch_df <- catch_df %>% 
+  gather(species, catch, -Region, -Year) %>% 
+  rename(catch_thousands = catch)
+head(catch_df)
+unique(catch_df$species)
+```
+```{r}
+str(catch_df)
+catch_integers <- as.integer(catch_df$catch_thousands)
+```
+
+We get an error “NAs introduced by coercion” which is R telling us that it couldn’t convert every value to an integer and, for those values it couldn’t convert, it put an NA in its place. This is behavior we commonly experience when cleaning datasets and it’s important to have the skills to deal with it when it crops up. We can find out which values are NAs with a combination of is.na() and which():
+
+```{r}
+i <- which(is.na(catch_integers)==T)# gives the row number that is problematic
+catch_df$catch_thousands[i]
+```
+It looks like the 401st value is the problem. Let’s look at the 401s row of the catch data.frame:
+```{r}
+catch_df[401,]
+```
+
+
+
+Well that’s odd: The value in catch_thousands is I which is isn’t even a number. It turns out that this dataset is from a PDF which was automatically converted into a CSV and this value of I is actually a 1. Let’s fix it:
+```{r}
+catch_df <- catch_df %>%
+  mutate(catch_thousands = ifelse(catch_thousands == "I", 1, catch_thousands),
+         catch_thousands = as.integer(catch_thousands))
+```
+
+Note that, in the above pipeline call to mutate(), we mutate catch_thousands twice. This works because mutate() processes each of the mutations in a step-wise fashion so the results of one mutation are available for the next.
+
+Now let’s try our conversion again:
+```{r}
+catch_df <- catch_df %>%
+  mutate(catch = catch_thousands * 1000)
+
+summary(catch_df)
+```
+
+
+
+Looks good, no warnings! Now let’s remove the catch_thousands column for now since we don’t need it:
+```{r}
+catch_df <- catch_df %>% 
+  select(-catch_thousands)
+
+tail(catch_df)
+```
+
+
+
