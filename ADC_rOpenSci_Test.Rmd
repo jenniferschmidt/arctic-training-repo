@@ -1,0 +1,67 @@
+---
+title: "ACD_rOpenSci_Test"
+author: "Jennifer Schmidt"
+date: "August 17, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(rnoaa)
+library(rfishbase)
+library(fansi)
+#install.packages("ncdf4")
+library(ncdf4)
+```
+
+```{r}
+fish <- c("Oreochromis niloticus", "Salmo trutta")
+fish <- validate_names(c("Oreochromis niloticus", "Salmo trutta"))
+```
+
+
+```{r}
+fish <- species_list(Genus = "Labroides")
+fish
+```
+
+```{r}
+fish_common <- common_to_sci("trout")
+fish_common
+```
+
+```{r}
+# Go here: http://www.ndbc.noaa.gov/
+# Find a station ID, like https://www.ndbc.noaa.gov/station_page.php?station=46080
+buoy(dataset = 'cwind', buoyid = 46080, year = 2016, datatype = "c")
+
+bd <- buoy(dataset = 'cwind', buoyid = 46080, year = 2016, datatype = "c")
+plot(bd$data$wind_spd)
+
+```
+
+```{r}
+library(ggplot2)
+ggplot(bd$data, aes(x = wind_spd, y = wind_dir)) + 
+     geom_point() +
+     stat_smooth(method = "lm", col = "red")
+```
+remove outlier
+
+```{r}
+library(ggplot2)
+bd2<- bd$data[ which(bd$data$wind_spd <50), ]
+ggplot(bd2, aes(x = wind_spd, y = wind_dir)) + 
+    geom_point() +
+    stat_smooth(method = "lm", col = "red")
+```
+
+```{r}
+options(FISHBASE_API = "https://fishbase.ropensci.org/sealifebase")
+kingcrab <- common_to_sci("king crab")
+kingcrab
+```
+
