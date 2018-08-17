@@ -65,3 +65,7 @@ kingcrab <- common_to_sci("king crab")
 kingcrab
 ```
 
+To install a package from Git hub
+```{r}
+devtools::install_github("benmarwick/rrtools")
+```
